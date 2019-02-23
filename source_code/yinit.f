@@ -2,7 +2,7 @@
      1                 N,MXLAM,NPOTL,
      2                 ERED,R,RMLMDA,ZOUT,
      3                 IPRINT)
-C  Copyright (C) 2018 J. M. Hutson & C. R. Le Sueur
+C  Copyright (C) 2019 J. M. Hutson & C. R. Le Sueur
 C  Distributed under the GNU General Public License, version 3
       IMPLICIT NONE
 C
@@ -57,38 +57,20 @@ C  INTERNAL VARIABLES
       LOGICAL ADIAB
       DOUBLE PRECISION WREF,WVAL
       DOUBLE PRECISION, PARAMETER:: ZERTOL=1D-10
+      CHARACTER(1) PLUR(2)
+      DATA PLUR /' ','S'/
 
-c  ADIAB MEANS INITIALISE IN DIABATIC BASIS
+C  ADIAB MEANS INITIALISE IN DIABATIC BASIS
       ADIAB=(ZOUT .AND. ADIAMN) .OR. (.NOT.ZOUT .AND. ADIAMX)
 
-c  The IREAD/IWRITE logic will not work unless ESHIFT is passed properly.
-c  I've disabled it for now.
-c     IF (IREAD) THEN
-c       READ(ISCRU) W
-c       IF (ADIAB) THEN
-c         READ(ISCRU) EVAL,EVECS
-c  If we revive the IREAD/IWRITE capability, 
-c  I think this shift needs to be inside the read section
-c         DO I=1,N
-c           EVAL(I)=EVAL(I)-ESHIFT
-c         ENDDO
-c       ELSE
-c         DO I=1,N
-c           W(I,I)=W(I,I)-ESHIFT
-c         ENDDO
-c     ELSE
-        CALL WAVMAT(W,N,R,P,VL,IV,ERED,EINT,CENT,RMLMDA,DIAG,
-     1              MXLAM,NPOTL,IPRINT)
-c  Would need to write W without condition on ADIAMN and ADIAMX
-c       IF (IWRITE) WRITE(ISCRU) W,EVAL
+      CALL WAVMAT(W,N,R,P,VL,IV,ERED,EINT,CENT,RMLMDA,DIAG,
+     1            MXLAM,NPOTL,IPRINT)
 C
 C  FOR INITIALISATION IN ADIABATIC BASIS, DIAGONALISE W
 C
-        IF (ADIAB) THEN
-          CALL DIAGVC(W,N,N,EVAL,EVECS)
-c         IF (IWRITE) WRITE(ISCRU) EVAL,EVECS
-        ENDIF
-c     ENDIF
+      IF (ADIAB) THEN
+        CALL DIAGVC(W,N,N,EVAL,EVECS)
+      ENDIF
 C
       DO J=1,N
         DO I=1,N
@@ -132,10 +114,11 @@ C  OPEN CHANNEL
 C
       IF (NOPEN.GT.0) THEN
         IF (ZOUT) THEN
-          IF (IPRINT.GE.3) WRITE(6,601) NOPEN,'RMIN'
+          IF (IPRINT.GE.3) WRITE(6,601) NOPEN,PLUR(MIN(NOPEN,2)),'RMIN'
         ELSEIF (IPRINT.GE.8) THEN
-          WRITE(6,601) NOPEN,'RMAX'
-  601     FORMAT('  **** WARNING:',I5,' OPEN CHANNELS DETECTED AT ',A4)
+          WRITE(6,601) NOPEN,PLUR(MIN(NOPEN,2)),'RMAX'
+  601     FORMAT('  **** WARNING:',I5,' OPEN CHANNEL',A,
+     1           ' DETECTED AT ',A4)
         ENDIF
       ENDIF
 C

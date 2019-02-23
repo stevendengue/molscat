@@ -3,7 +3,7 @@
      2                  U,W,Q,Y1,Y2,
      3                  RSTART,RSTOP,NSTEP,DR,NODES,
      4                  ERED,RMLMDA,IPRINT)
-C  Copyright (C) 2018 J. M. Hutson & C. R. Le Sueur
+C  Copyright (C) 2019 J. M. Hutson & C. R. Le Sueur
 C  Distributed under the GNU General Public License, version 3
       USE potential, ONLY: NRSQ
 C  VERSION (1/27/93) USES /MEMORY/ ..,IVLFL, ONLY TO CHECK USE OF
@@ -122,7 +122,7 @@ C
 C
 C  CORRECT THE CENTRIFUGAL TERM IF DIFFERENT FROM THAT SAVED
 C
-C  02-08-18 CRLS: NOT SURE WHAT TO DO WITH CORRECTIONS TO 
+C  02-08-18 CRLS: NOT SURE WHAT TO DO WITH CORRECTIONS TO
 C                 CENTRIFUGAL TERM IF NRSQ>0, SO...
       IF (NRSQ.GT.0) THEN
         WRITE(6,*) ' *** CODING WORK NEEDED IN ODPROP'

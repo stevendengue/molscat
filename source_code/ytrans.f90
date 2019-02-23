@@ -2,7 +2,7 @@ SUBROUTINE YTRANS(Y,EVEC,EINT,WVEC,                      &
                   JSINDX,L,N,P,VL,IV,                    &
                   MXLAM,NPOTL,ERED,RMLMDA,DEGTOL,NOPEN,  &
                   IBOUND,CENT,IPRINT,LQUIET)
-!  Copyright (C) 2018 J. M. Hutson & C. R. Le Sueur
+!  Copyright (C) 2019 J. M. Hutson & C. R. Le Sueur
 !  Distributed under the GNU General Public License, version 3
 USE potential
 !  Routine to transform the log derivative matrix (Y) with primitive
@@ -25,9 +25,6 @@ USE potential
 !  Several different YTRANS amalgamated by CRLS 24-04-15
 !
 !  altered by CRLS 17-07-2018 to use new structure for extra operators
-!
-!  minor alteration by CRLS 14-01-2019 to always call wvcalc and hence
-!  return NOPEN and WVEC
 !
 !  This latest version has the capability to find degenerate sets of
 !  eigenvalues and then to form linear (orthonormal) combinations of
@@ -78,6 +75,7 @@ integer, external              :: IDAMAX
 double precision                  realL,tol_L,wmax,CINT,CENTcur,CENTmax
 logical                           no37,nowarn,zdegen
 character(6)                   :: l_one
+character(19)                  :: string
 data no37,nowarn/.True.,.False./
 data tol_L/1d-10/
 
@@ -89,7 +87,12 @@ if (NCONST.eq.0 .and. NRSQ.eq.0 .and. NEXTRA.eq.0) then
 endif
 
 NEXTRA_local=NEXTRA
-if (cdrive.ne.'M') NEXTRA_local=0 ! can ignore extra operators for BOUND/FIELD
+if (cdrive.ne.'M') then
+  NEXTRA_local=0 ! can ignore extra operators for BOUND/FIELD
+  string='thresholds'
+else
+  string='asymptotic channels'
+endif
 
 n_ops=min(1,NCONST)+min(1,NRSQ)+NEXTRA_local
 allocate (mconst(n_ops))
@@ -112,10 +115,9 @@ if (IVLU.ne.0 .or. IVLFL.gt.0) then
 endif
 
 if ((jprint.ge.6 .and. n_ops.gt.1 .and. CDRIVE.eq.'M') .or. jprint.ge.10) then
-  write(6,890)
+  write(6,890) string
 endif
-890  format(/'  Coefficients of operators to be diagonalised to find ',&
-            'asymptotic channels')
+890  format(/'  Coefficients of operators to be diagonalised to find ',a)
 
 allocate(wks(N,N,n_ops))
 ibeg=1
@@ -162,7 +164,7 @@ elseif (NRSQ.eq.0 .and. IBOUND.ne.0) then
   do while (CENTcur.le.CENTmax)
     index_CENT=index_CENT+1
     do i=1,N
-      if (maskCorL(i).eq.0) cycle
+      if (maskCorL(i).ne.0) cycle
       if (abs(CENT(i)-CENTcur).le.DEGTOL) then
         maskCorL(i)=index_CENT
       endif
@@ -218,23 +220,23 @@ do LL=Lmin,Lmax
     if (NRSQ.eq.0 .and. IBOUND.eq.0) then
       write(6,'(/,a,I3)') '  Asymptotic Hamiltonian for L = ',LL
     elseif (NRSQ.eq.0 .and. IBOUND.ne.0) then
-      write(6,'(/,a,G12.5)') ' Asymptotic Hamiltonian for CENT = ',CENTcur
+      write(6,'(/,a,G12.5)') '  Asymptotic Hamiltonian for CENT = ',CENTcur
     else
-      write(6,'(/,a)') ' Asymptotic Hamiltonian'
+      write(6,'(/,a)') '  Asymptotic Hamiltonian'
     endif
-    write(6,'(a,I3,a,I3)') ' submatrix',nn,'*',nn
-    call MATPRN(6,Wsub,nn,nn,nn,0,Wsub, 'submatrix is:',1)
+    write(6,'(a,I3,a,I3)') '  submatrix',nn,'*',nn
+    call MATPRN(6,Wsub,nn,nn,nn,2,Wsub, 'submatrix is:',1)
   endif
 
 !  recursively (if necessary) diagonalise submatrices of asymptotic
 !  hamiltonian/extra operators
-  if (jprint.ge.14) then
+  if ((jprint.ge.6 .and. n_ops.gt.1 .and. CDRIVE.eq.'M') .or. jprint.ge.10) then
     if (NRSQ.eq.0 .and. IBOUND.eq.0) then
       write(6,910) 'Calling multop for L =',LL
     elseif (NRSQ.eq.0 .and. IBOUND.ne.0) then
       write(6,911) 'Calling multop for CENT =',CENTcur
     else
-      write(6,*) ' Calling multop'
+      if (jprint.ge.10) write(6,*) ' Calling multop'
     endif
   endif
 910   format(/2x,a,1x,i2)
@@ -268,17 +270,12 @@ do LL=Lmin,Lmax
 
   if (NRSQ.gt.0) then
 ! copy eigenvalues of L^2 operator into r_L
-    i=0
     if (NCONST.gt.0) then
       irsq=2
     else
       irsq=1
     endif
-    do icol=1,N
-      if (L(icol).ne.LL) cycle
-      i=i+1
-      r_L(icol)=eval(i,irsq)
-    enddo
+    r_L(:)=eval(:,irsq)
   endif
 
 
@@ -299,11 +296,6 @@ do LL=Lmin,Lmax
     endif
   enddo
 
-
-! if (jprint.ge.20) then
-!   call MATPRN(6,Wsub,nn,nn,nn,1,Wsub,' EIGENVECTORS:',1)
-! endif
-
 !  check for degeneracies
   if (.not.nowarn) then
     allocate(eigmag(n_ops))
@@ -320,11 +312,13 @@ do LL=Lmin,Lmax
           enddo
           if (zdegen) then
             write(6,*)
-            write(6,'(a,i5,a,i5,a)') ' Warning in YTRANS. Eigenvalues ', &
+            write(6,'(a,i5,a,i5,a)') '  Warning in YTRANS. Eigenvalues ', &
                                      j,' and ',i, &
                                      ' near-degenerate for all operators'
             do i_op=1,n_ops
-              write(6,'(a,i3)') ' i_op =',i_op
+              write(6,'(a,i3)') '  i_op =',i_op
+              write(6,"(10x,'Eval(',i2,')',18x,'Eval(',i2,')',18x,'diff')") &
+                    j,i
               write(6,*) eval(j,i_op),eval(i,i_op), &
                          eval(j,i_op)-eval(i,i_op)
             enddo
@@ -403,8 +397,8 @@ if (lquiet) then
 ! this is original code
 ! Y=matmul(matmul(transpose(EVEC),Y),EVEC)
   if (iprint.ge.20) then
-    call matprn(6,EVEC,N,N,N,1,EVEC,' Eigenvectors (last time):',1)
-    call matprn(6,Y,N,N,N,1,Y,' transformed Y:',1)
+    call MATPRN(6,EVEC,N,N,N,3,EVEC,' Eigenvectors (last time):',1)
+    call MATPRN(6,Y,N,N,N,3,Y,' transformed Y:',1)
     do ll=1,NPOTL
       it=ll
       do j=1,N
@@ -415,9 +409,9 @@ if (lquiet) then
       enddo
       enddo
       write (6,*) ' For potential term ',ll,':'
-      if (iprint.ge.23) call matprn(6,wks,N,N,N,0,wks,'original VL',1)
+      if (iprint.ge.23) call MATPRN(6,wks,N,N,N,2,wks,'original VL',1)
       call trnsfm(eval,wks(:,:,1),wks(:,:,2),N,.false.,.false.)
-      call matprn(6,wks,N,N,N,0,wks,'transformed VL',1)
+      call MATPRN(6,wks,N,N,N,2,wks,'transformed VL',1)
     enddo
   endif
   deallocate (eval,wks)
@@ -439,7 +433,6 @@ if (NRSQ.ne.0) then
       if (abs(realL-dble(nint(realL))).gt.tol_L) then
         write(6,*) ' Eigenvalues of centrifugal operator are not integer'
         write(6,930) 'Solution #',i,' is ',realL
-!       stop
       endif
       L(i)=nint(realL)
     else

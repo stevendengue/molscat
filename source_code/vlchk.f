@@ -1,5 +1,5 @@
       SUBROUTINE VLCHK(IVLFL,IPRINT,ITYPE,NLABV,MXLAM,NPOTL,LAM)
-C  Copyright (C) 2018 J. M. Hutson & C. R. Le Sueur
+C  Copyright (C) 2019 J. M. Hutson & C. R. Le Sueur
 C  Distributed under the GNU General Public License, version 3
       USE potential
       IMPLICIT NONE
@@ -101,7 +101,7 @@ C  COUNT NUMBER OF BLOCKS OF VL ARRAY NEEDED FOR EXTRA OPERATORS
           MXLAM=ABS(MXLAM)
           RETURN
         ENDIF
- 
+
         NQ=NLABV(ITP)
 
         NDUP = IDPCHK(NQ,MXLAM,LAM)

@@ -1,5 +1,5 @@
-      SUBROUTINE RDPCH(ISIGU)
-C  Copyright (C) 2018 J. M. Hutson & C. R. Le Sueur
+      SUBROUTINE RDSIGU(ISIGU)
+C  Copyright (C) 2019 J. M. Hutson & C. R. Le Sueur
 C  Distributed under the GNU General Public License, version 3
       USE efvs
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -67,6 +67,6 @@ C     IF (SIG.GT.0.D0 .AND. I4.NE.I5)
 C    1    WRITE(7,600) S,E,F1,F2,I1,I2,I3,I4,I5,SIG,CS
       GOTO 1000
 
-  900 WRITE(6,*) ' *** RDPCH.  ERROR READING FILE',ISIGU
+  900 WRITE(6,*) ' *** RDSIGU.  ERROR READING FILE',ISIGU
       RETURN
       END

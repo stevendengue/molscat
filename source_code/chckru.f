@@ -1,4 +1,6 @@
       SUBROUTINE CHCKRU(RUNIT,RPUNIT,RSCALE,unset,IPRINT)
+C  Copyright (C) 2019 J. M. Hutson & C. R. Le Sueur
+C  Distributed under the GNU General Public License, version 3
       USE potential, ONLY: runame, rmname
       USE physical_constants, ONLY: bohr_in_SI
       IMPLICIT NONE
@@ -13,15 +15,15 @@
           RPUNIT=1.D0
         ELSE
           RUNIT=RPUNIT
-          IF(RUNAME.EQ.'RUNIT') RUNAME=RMNAME
+          IF (RUNAME.EQ.'RUNIT') RUNAME=RMNAME
         ENDIF
       ELSE
         IF (RPUNIT.EQ.unset) THEN
           RPUNIT=RUNIT
-          IF(RUNAME.EQ.'RUNIT') RUNAME=RMNAME
+          IF (RUNAME.EQ.'RUNIT') RUNAME=RMNAME
         ELSE
            IF (RUNIT.EQ.RPUNIT) THEN
-            IF(RUNAME.EQ.'RUNIT') RUNAME=RMNAME
+            IF (RUNAME.EQ.'RUNIT') RUNAME=RMNAME
           ELSEIF (IPRINT.GE.6) THEN
             WRITE(6,100)
   100 FORMAT(/'  NOTE THAT POTENTIAL ROUTINE OPERATES IN DIFFERENT ',
@@ -37,9 +39,15 @@ C
         RUNAME='BOHR    '
       ENDIF
 C
-      WRITE(6,200) TRIM(RUNAME),RUNIT
-  200 FORMAT(/'  ALL LENGTHS ARE IN UNITS OF ',A,' (',F12.8,
-     1        ' ANGSTROM ) UNLESS OTHERWISE STATED'/)
+      IF (RUNIT.EQ.1.D0) THEN
+        WRITE(6,200)
+  200   FORMAT(/'  ALL LENGTHS ARE IN UNITS OF ANGSTROM UNLESS ',
+     1          'OTHERWISE STATED'/)
+      ELSE
+        WRITE(6,210) TRIM(RUNAME),RUNIT
+  210   FORMAT(/'  ALL LENGTHS ARE IN UNITS OF ',A,' (',F12.8,
+     1          ' ANGSTROM ) UNLESS OTHERWISE STATED'/)
+      ENDIF
 
       RETURN
       END
